@@ -40,14 +40,11 @@ sudo mkdir \-p /mnt/ssd\_data/financeflow/public
 sudo mkdir \-p /mnt/ssd\_data/financeflow/data  
 sudo chown \-R 1000:1000 /mnt/ssd\_data/financeflow
 
-1. 
-
-**Démarrage du service Docker :** Se placer dans le dossier racine de l'application et lancer docker compose :  
+1. **Démarrage du service Docker :** Se placer dans le dossier racine de l'application et lancer docker compose :  
 cd /mnt/ssd\_data/financeflow  
 sudo docker compose up \-d
 
-2.   
-3. **Accès :** L'application écoute sur le port **8082**.  
+2. **Accès :** L'application écoute sur le port **8082**.  
    * En local : `http://192.168.1.47:8082`  
 \
 ## **🛡️ Sécurité & Accès Extérieur**
