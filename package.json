@@ -1,0 +1,9 @@
+{
+  "name": "financeflow-server",
+  "version": "1.0.0",
+  "description": "Serveur local pour FinanceFlow Pro",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

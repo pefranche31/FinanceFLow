@@ -259,11 +259,16 @@
         // --- Composant Principal ---
         const App = () => {
             // --- État Global ---
-            const [transactions, setTransactions] = useState([]);
-            const [categories, setCategories] = useState(INITIAL_CATEGORIES);
-            const [accounts, setAccounts] = useState(INITIAL_ACCOUNTS);
-            const [budgets, setBudgets] = useState({});
-            const [isDataLoaded, setIsDataLoaded] = useState(false);
+            const [transactions, setTransactions] = useState(() => JSON.parse(localStorage.getItem('bt_transactions') || '[]'));
+            const [categories, setCategories] = useState(() => {
+                const saved = JSON.parse(localStorage.getItem('bt_categories') || '[]');
+                return (saved.length > 0 ? saved : INITIAL_CATEGORIES).map(c => typeof c === 'string' ? { name: c, isTransfer: false } : c).sort((a, b) => a.name.localeCompare(b.name));
+            });
+            const [accounts, setAccounts] = useState(() => {
+                const saved = JSON.parse(localStorage.getItem('bt_accounts') || '[]');
+                return (saved.length > 0 ? saved : INITIAL_ACCOUNTS).map(a => ({ ...a, owner: a.owner || 'Bob' }));
+            });
+            const [budgets, setBudgets] = useState(() => JSON.parse(localStorage.getItem('bt_budgets') || '{}'));
 
             // --- Visibilité des Panneaux ---
             const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -271,8 +276,8 @@
 
             // --- Navigation & Filtres ---
             const [activeTab, setActiveTab] = useState('dashboard');
-            const [isLoading, setIsLoading] = useState(true); // Commencer à true
-            const [selectedAccounts, setSelectedAccounts] = useState([]);
+            const [isLoading, setIsLoading] = useState(false);
+            const [selectedAccounts, setSelectedAccounts] = useState(() => accounts.map(a => a.id));
             const [dateRange, setDateRange] = useState({ start: '', end: '', type: 'all' });
             const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
             
@@ -317,61 +322,20 @@
             const [isExportOptionsModalOpen, setIsExportOptionsModalOpen] = useState(false); 
             const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false); 
             
-            const [entryForm, setEntryForm] = useState({ id: null, date: new Date().toISOString().split('T')[0], label: '', amount: '', type: 'expense', accountId: 'joint', category: '', notes: '', reconciliationId: null });
+            const [entryForm, setEntryForm] = useState({ id: null, date: new Date().toISOString().split('T')[0], label: '', amount: '', type: 'expense', accountId: accounts[0]?.id || 'joint', category: '', notes: '', reconciliationId: null });
             const [accountForm, setAccountForm] = useState({ id: null, name: '', owner: '', color: ACC_COLOR_PALETTE[0] });
             const [categoryForm, setCategoryForm] = useState({ id: null, oldName: '', name: '', isTransfer: false }); 
             const [exportSettings, setExportSettings] = useState({ type: 'all', selectedAccountIds: [] });
 
-            // 1. Charger les données au démarrage
             useEffect(() => {
-                fetch('/api/data')
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.transactions && data.transactions.length > 0) setTransactions(data.transactions);
-                        if (data.categories && data.categories.length > 0) setCategories(data.categories.sort((a, b) => a.name.localeCompare(b.name)));
-                        if (data.accounts && data.accounts.length > 0) {
-                            setAccounts(data.accounts);
-                            setSelectedAccounts(data.accounts.map(a => a.id));
-                            setEntryForm(prev => ({...prev, accountId: data.accounts[0]?.id || 'joint'}));
-                        } else {
-                            setSelectedAccounts(INITIAL_ACCOUNTS.map(a => a.id));
-                        }
-                        if (data.budgets) setBudgets(data.budgets);
-                        setIsDataLoaded(true);
-                        setIsLoading(false);
-                    })
-                    .catch(err => {
-                        console.error("Erreur de communication avec le serveur", err);
-                        setSelectedAccounts(INITIAL_ACCOUNTS.map(a => a.id));
-                        setIsDataLoaded(true);
-                        setIsLoading(false);
-                    });
-            }, []);
-
-            // 2. Sauvegarder sur le serveur à chaque modification
-            useEffect(() => {
-                if (!isDataLoaded) return; 
-
-                const saveData = async () => {
-                    try {
-                        await fetch('/api/data', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ transactions, categories, accounts, budgets })
-                        });
-                    } catch (error) { console.error("Erreur de sauvegarde", error); }
-                };
-
-                const timeoutId = setTimeout(saveData, 500);
-                return () => clearTimeout(timeoutId);
-            }, [transactions, categories, accounts, budgets, isDataLoaded]);
-
-            // 3. Conserver le thème sombre
-            useEffect(() => {
+                localStorage.setItem('bt_transactions', JSON.stringify(transactions));
+                localStorage.setItem('bt_categories', JSON.stringify(categories));
+                localStorage.setItem('bt_accounts', JSON.stringify(accounts));
+                localStorage.setItem('bt_budgets', JSON.stringify(budgets));
                 localStorage.setItem('bt_theme', darkMode ? 'dark' : 'light');
                 if (darkMode) document.documentElement.classList.add('dark');
                 else document.documentElement.classList.remove('dark');
-            }, [darkMode]);
+            }, [transactions, categories, accounts, budgets, darkMode]);
 
             const accountMap = useMemo(() => accounts.reduce((acc, curr) => ({ ...acc, [curr.id.toUpperCase()]: curr }), {}), [accounts]);
             
@@ -1063,7 +1027,7 @@
                                                                 <RePieChart>
                                                                     <Pie data={accountDistributionData} innerRadius={70} outerRadius={100} paddingAngle={8} dataKey="value" stroke="none">
                                                                         {accountDistributionData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                                                                </Pie>
+                                                                    </Pie>
                                                                     <ReTooltip formatter={(v) => [formatCurrency(v)]} contentStyle={{borderRadius: '15px', border: 'none', backgroundColor: darkMode ? '#0f172a' : '#fff'}} />
                                                                 </RePieChart>
                                                             </ResponsiveContainer>
