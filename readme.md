@@ -49,8 +49,7 @@ sudo docker compose up \-d
 2.   
 3. **Accès :** L'application écoute sur le port **8082**.  
    * En local : `http://192.168.1.47:8082`  
-   * À distance (Tailscale) : `http://pepilsserver.tailcace3e.ts.net:8082`
-
+\
 ## **🛡️ Sécurité & Accès Extérieur**
 
 En tant qu'ingénieur sécurité, l'approche Zero Trust est respectée : L'application ne possède pas de système d'authentification propre (login/mot de passe) car elle est isolée derrière **Tailscale**. Elle ne doit en aucun cas être exposée publiquement via un reverse proxy classique sans l'ajout préalable d'un middleware d'authentification (ex: Authelia / Authentik) ou d'un .htpasswd sur le conteneur.
